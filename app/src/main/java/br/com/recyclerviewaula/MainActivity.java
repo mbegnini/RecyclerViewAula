@@ -122,6 +122,5 @@ public class MainActivity extends AppCompatActivity implements Actions {
                 Toast.makeText(this,"Operação Cancelada!",Toast.LENGTH_LONG).show();
             }
         }
-
     }
 }
