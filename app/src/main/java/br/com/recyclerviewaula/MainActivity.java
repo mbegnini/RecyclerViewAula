@@ -3,6 +3,7 @@ package br.com.recyclerviewaula;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -24,6 +25,8 @@ public class MainActivity extends AppCompatActivity implements Actions {
     private List<Filme> listaFilmes;
     private FilmeAdapter adapter;
     private RecyclerView recyclerView;
+
+    private static final int REQUEST_INSERT = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,8 +59,7 @@ public class MainActivity extends AppCompatActivity implements Actions {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Filme f = new Filme("Filme Generico", "Ação", 2019);
-                adapter.inserir(f);
+                inserirFilme();
             }
         });
     }
@@ -85,6 +87,11 @@ public class MainActivity extends AppCompatActivity implements Actions {
         return super.onOptionsItemSelected(item);
     }
 
+    public void inserirFilme(){
+        Intent intent = new Intent(this, EditFilmActivity.class);
+        startActivityForResult(intent,REQUEST_INSERT);
+    }
+
     @Override
     public void undo() {
         Snackbar snackbar = Snackbar.make(findViewById(R.id.constraintLayout),"Item removido.",Snackbar.LENGTH_LONG);
@@ -101,5 +108,20 @@ public class MainActivity extends AppCompatActivity implements Actions {
     @Override
     public void toast(Filme filme) {
         Toast.makeText(this,filme.getTitulo()+" "+filme.getGenero()+" "+filme.getAno(),Toast.LENGTH_LONG).show();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_INSERT){
+            if (resultCode == Activity.RESULT_OK){
+                Bundle bundle = data.getExtras();
+                Filme filme = (Filme) bundle.getSerializable("filme");
+                adapter.inserir(filme);
+            } else{
+                Toast.makeText(this,"Operação Cancelada!",Toast.LENGTH_LONG).show();
+            }
+        }
+
     }
 }

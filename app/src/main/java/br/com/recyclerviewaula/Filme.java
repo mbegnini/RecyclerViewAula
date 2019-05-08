@@ -8,6 +8,9 @@ public class Filme implements Serializable {
     private String genero;
     private int ano;
 
+    public Filme() {
+    }
+
     public Filme(String titulo, String genero, int ano) {
         this.titulo = titulo;
         this.genero = genero;

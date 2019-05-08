@@ -55,14 +55,14 @@ public class FilmeAdapter extends RecyclerView.Adapter {
             public void onClick(View v) {
                 remover(i);
             }
-        });
+        });*/
 
         holder.generoTextView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                updateGenero("Terror",i);
+                updateGenero("Terror",viewHolder.getAdapterPosition());
             }
-        });*/
+        });
     }
 
     public void remover(int position){
