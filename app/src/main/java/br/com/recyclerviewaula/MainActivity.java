@@ -26,7 +26,8 @@ public class MainActivity extends AppCompatActivity implements Actions {
     private FilmeAdapter adapter;
     private RecyclerView recyclerView;
 
-    private static final int REQUEST_INSERT = 1;
+    private static final int REQUEST_EDIT = 1;
+    private static final int REQUEST_INSERT = 2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -87,10 +88,15 @@ public class MainActivity extends AppCompatActivity implements Actions {
         return super.onOptionsItemSelected(item);
     }
 
-    public void inserirFilme(){
+
+    private void inserirFilme(){
         Intent intent = new Intent(this, EditFilmActivity.class);
-        startActivityForResult(intent,REQUEST_INSERT);
+        Bundle bundle = new Bundle();
+        bundle.putInt("request_code", REQUEST_INSERT);
+        intent.putExtras(bundle);
+        startActivityForResult(intent, REQUEST_INSERT);
     }
+
 
     @Override
     public void undo() {
@@ -111,15 +117,33 @@ public class MainActivity extends AppCompatActivity implements Actions {
     }
 
     @Override
+    public void edit(int position) {
+        Intent intent = new Intent(this, EditFilmActivity.class);
+        Bundle bundle = new Bundle();
+        bundle.putInt("request_code", REQUEST_EDIT);
+        bundle.putSerializable("filme", adapter.getListaFilmes().get(position));
+        bundle.putInt("position", position);
+        intent.putExtras(bundle);
+        startActivityForResult(intent, REQUEST_EDIT);
+    }
+
+
+    @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_INSERT){
-            if (resultCode == Activity.RESULT_OK){
+        if (requestCode == REQUEST_EDIT) {
+            if (resultCode == Activity.RESULT_OK) {
                 Bundle bundle = data.getExtras();
-                Filme filme = (Filme) bundle.getSerializable("filme");
-                adapter.inserir(filme);
-            } else{
-                Toast.makeText(this,"Operação Cancelada!",Toast.LENGTH_LONG).show();
+                Filme f = (Filme) bundle.getSerializable("filme");
+                int position = bundle.getInt("position");
+                adapter.update(f, position);
+            }
+        }
+        if (requestCode == REQUEST_INSERT) {
+            if (resultCode == Activity.RESULT_OK) {
+                Bundle bundle = data.getExtras();
+                Filme f = (Filme) bundle.getSerializable("filme");
+                adapter.inserir(f);
             }
         }
     }

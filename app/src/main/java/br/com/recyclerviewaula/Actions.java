@@ -6,4 +6,6 @@ public interface Actions {
 
     public void toast(Filme filme);
 
+    public void edit(int position);
+
 }

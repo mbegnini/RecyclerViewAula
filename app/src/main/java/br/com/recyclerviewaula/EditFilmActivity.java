@@ -15,7 +15,8 @@ public class EditFilmActivity extends AppCompatActivity {
     EditText tituloEditText;
     EditText generoEditText;
     EditText anoEditText;
-
+    Filme filme;
+    int position;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,29 +29,35 @@ public class EditFilmActivity extends AppCompatActivity {
         generoEditText = (EditText) findViewById(R.id.generoEditText);
         anoEditText = (EditText) findViewById(R.id.anoEditText);
 
+        Bundle bundle = getIntent().getExtras();
+        final int requestCode = bundle.getInt("request_code");
+        if (requestCode == 1) {
+            filme = (Filme) bundle.getSerializable("filme");
+            position = bundle.getInt("position");
+            tituloEditText.setText(filme.getTitulo());
+            generoEditText.setText(filme.getGenero());
+            anoEditText.setText(String.valueOf(filme.getAno()));
+        }else
+            filme = new Filme();
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                returnFilme();
+                filme.setTitulo(tituloEditText.getText().toString());
+                filme.setGenero(generoEditText.getText().toString());
+                filme.setAno(Integer.valueOf(anoEditText.getText().toString()));
+                Intent returnIntent = new Intent();
+                Bundle returnBundle = new Bundle();
+                returnBundle.putSerializable("filme", filme);
+
+                if (requestCode == 1)
+                    returnBundle.putInt("position",position);
+
+                returnIntent.putExtras(returnBundle);
+                setResult(Activity.RESULT_OK, returnIntent);
+                finish();
             }
         });
-    }
-
-    public void returnFilme(){
-        Filme filme = new Filme();
-        filme.setTitulo(tituloEditText.getText().toString());
-        filme.setGenero(generoEditText.getText().toString());
-        filme.setAno(Integer.valueOf(anoEditText.getText().toString()));
-
-        Bundle bundle = new Bundle();
-        bundle.putSerializable("filme",filme);
-
-        Intent returnIntent = new Intent();
-        returnIntent.putExtras(bundle);
-        setResult(Activity.RESULT_OK, returnIntent);
-
-        finish();
     }
 
 }

@@ -44,25 +44,11 @@ public class FilmeAdapter extends RecyclerView.Adapter {
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //Toast.makeText(v.getContext(),"Você clicou no filme "+listaFilmes.get(i).getTitulo(),Toast.LENGTH_SHORT).show();
-                //click.edit(i);
-                actions.toast(listaFilmes.get(viewHolder.getAdapterPosition()));
+                actions.edit(viewHolder.getAdapterPosition());
             }
         });
 
-        /*holder.anoTextView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                remover(i);
-            }
-        });*/
 
-        holder.generoTextView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                updateGenero("Terror",viewHolder.getAdapterPosition());
-            }
-        });
     }
 
     public void remover(int position){
@@ -108,6 +94,13 @@ public class FilmeAdapter extends RecyclerView.Adapter {
 
     public void updateAno (int newAno, int position){
         listaFilmes.get(position).setAno(newAno);
+        notifyItemChanged(position);
+    }
+
+    public void update(Filme filme, int position){
+        listaFilmes.get(position).setTitulo(filme.getTitulo());
+        listaFilmes.get(position).setGenero(filme.getGenero());
+        listaFilmes.get(position).setAno(filme.getAno());
         notifyItemChanged(position);
     }
 
