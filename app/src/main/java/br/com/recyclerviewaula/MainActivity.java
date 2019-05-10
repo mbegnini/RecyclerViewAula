@@ -84,7 +84,6 @@ public class MainActivity extends AppCompatActivity implements Actions {
             Toast.makeText(this,adapter.getListaFilmes().get(0).getTitulo()+" "+adapter.getListaFilmes().get(1).getTitulo()+" "+adapter.getListaFilmes().get(2).getTitulo(),Toast.LENGTH_LONG).show();
             return true;
         }
-
         return super.onOptionsItemSelected(item);
     }
 
