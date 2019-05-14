@@ -19,6 +19,7 @@ import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
@@ -150,8 +151,8 @@ public class MainActivity extends AppCompatActivity implements Actions {
                 buffer.append(line);
             String resposta = buffer.toString();
 
-            //JSONObject object= new JSONObject(resposta);
-            JSONArray jsonArray = new JSONArray(resposta);
+            JSONObject object= new JSONObject(resposta);
+            JSONArray jsonArray = object.getJSONArray("filmes");
             listaFilmes = new ArrayList<Filme>();
             for (int i=0; i< jsonArray.length(); i++){
                 Filme f = new Filme();
