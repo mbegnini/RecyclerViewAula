@@ -17,6 +17,16 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
+import org.xmlpull.v1.XmlPullParserFactory;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,6 +35,7 @@ public class MainActivity extends AppCompatActivity implements Actions {
     private List<Filme> listaFilmes;
     private FilmeAdapter adapter;
     private RecyclerView recyclerView;
+    private FloatingActionButton fab;
 
     private static final int REQUEST_EDIT = 1;
     private static final int REQUEST_INSERT = 2;
@@ -36,33 +47,10 @@ public class MainActivity extends AppCompatActivity implements Actions {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        listaFilmes = new ArrayList<Filme>();
-        listaFilmes.add(new Filme("Pulp Fiction","Ação",1999));
-        listaFilmes.add(new Filme("Harry Potter","Fantasia",2001));
-        listaFilmes.add(new Filme("Forma da Agua","Fantasia",2018));
-        listaFilmes.add(new Filme("Senhor dos Anéis","Fantasia",2003));
-        listaFilmes.add(new Filme("Três anuncios de um crime","Ação",2017));
-        listaFilmes.add(new Filme("Vingadores End Game","Aventura",2019));
+        setRecyclerView();
+        setFloatActionButton();
 
-        recyclerView = (RecyclerView) findViewById(R.id.itemRecyclerView);
 
-        adapter = new FilmeAdapter(listaFilmes, this);
-
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        recyclerView.setItemAnimator(new DefaultItemAnimator());
-
-        recyclerView.setAdapter(adapter);
-
-        ItemTouchHelper touchHelper = new ItemTouchHelper(new TouchHelp(adapter));
-        touchHelper.attachToRecyclerView(recyclerView);
-
-        FloatingActionButton fab = findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                inserirFilme();
-            }
-        });
     }
 
     @Override
@@ -74,19 +62,120 @@ public class MainActivity extends AppCompatActivity implements Actions {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             Toast.makeText(this,adapter.getListaFilmes().get(0).getTitulo()+" "+adapter.getListaFilmes().get(1).getTitulo()+" "+adapter.getListaFilmes().get(2).getTitulo(),Toast.LENGTH_LONG).show();
             return true;
         }
+
         return super.onOptionsItemSelected(item);
     }
 
+
+    private void setRecyclerView(){
+        setListaFilmesJson();
+
+        adapter = new FilmeAdapter(listaFilmes, this);
+
+        recyclerView = (RecyclerView) findViewById(R.id.itemRecyclerView);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.setItemAnimator(new DefaultItemAnimator());
+        recyclerView.setAdapter(adapter);
+
+        ItemTouchHelper touchHelper = new ItemTouchHelper(new TouchHelp(adapter));
+        touchHelper.attachToRecyclerView(recyclerView);
+
+    }
+
+    private void setListaFilmesXML(){
+        XmlPullParserFactory pullParserFactory;
+        try {
+            pullParserFactory = XmlPullParserFactory.newInstance();
+            XmlPullParser parser = pullParserFactory.newPullParser();
+
+            InputStream in_s = getApplicationContext().getAssets().open("filmes.xml");
+            parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
+            parser.setInput(in_s, null);
+
+            parseXML(parser);
+
+        } catch (XmlPullParserException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void parseXML(XmlPullParser parser) throws XmlPullParserException,IOException {
+        listaFilmes = null;
+        int eventType = parser.getEventType();
+        Filme filme = null;
+        while (eventType != XmlPullParser.END_DOCUMENT){
+            String name = null;
+            switch (eventType){
+                case XmlPullParser.START_DOCUMENT:
+                    listaFilmes = new ArrayList<Filme>();
+                    break;
+                case XmlPullParser.START_TAG:
+                    name = parser.getName();
+                    if (name.equals("filme")){
+                        filme = new Filme();
+                    } else if (filme != null){
+                        if (name.equals("titulo")){
+                            filme.setTitulo(parser.nextText());
+                        } else if (name.equals("genero")){
+                            filme.setGenero(parser.nextText());
+                        } else if (name.equals("ano")){
+                            filme.setAno(Integer.valueOf(parser.nextText()));
+                        }
+                    }
+                    break;
+                case XmlPullParser.END_TAG:
+                    name = parser.getName();
+                    if (name.equalsIgnoreCase("filme") && filme != null){
+                        listaFilmes.add(filme);
+                    }
+            }
+            eventType = parser.next();
+        }
+    }
+
+    private void setListaFilmesJson(){
+        try{
+            InputStream in = getApplication().getAssets().open("filmes.json");
+            String line = "";
+            BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+            StringBuffer buffer = new StringBuffer();
+            while ((line = reader.readLine()) != null)
+                buffer.append(line);
+            String resposta = buffer.toString();
+
+            //JSONObject object= new JSONObject(resposta);
+            JSONArray jsonArray = new JSONArray(resposta);
+            listaFilmes = new ArrayList<Filme>();
+            for (int i=0; i< jsonArray.length(); i++){
+                Filme f = new Filme();
+                f.setTitulo(jsonArray.getJSONObject(i).getString("titulo"));
+                f.setGenero(jsonArray.getJSONObject(i).getString("genero"));
+                f.setAno(jsonArray.getJSONObject(i).getInt("ano"));
+                listaFilmes.add(f);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void setFloatActionButton(){
+        fab = findViewById(R.id.fab);
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                inserirFilme();
+            }
+        });
+    }
 
     private void inserirFilme(){
         Intent intent = new Intent(this, EditFilmActivity.class);
@@ -96,6 +185,27 @@ public class MainActivity extends AppCompatActivity implements Actions {
         startActivityForResult(intent, REQUEST_INSERT);
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_EDIT) {
+            if (resultCode == Activity.RESULT_OK) {
+                Bundle bundle = data.getExtras();
+                Filme f = (Filme) bundle.getSerializable("filme");
+                int position = bundle.getInt("position");
+                //adapter.updateTitle(f.getTitulo(),position);
+                //adapter.updateAno(f.getAno(),position);
+                //adapter.updateGenero(f.getGenero  (),position);
+                adapter.update(f, position);
+            }
+        }
+        if (requestCode == REQUEST_INSERT) {
+            if (resultCode == Activity.RESULT_OK) {
+                Bundle bundle = data.getExtras();
+                Filme f = (Filme) bundle.getSerializable("filme");
+                adapter.inserir(f);
+            }
+        }
+    }
 
     @Override
     public void undo() {
@@ -126,24 +236,4 @@ public class MainActivity extends AppCompatActivity implements Actions {
         startActivityForResult(intent, REQUEST_EDIT);
     }
 
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_EDIT) {
-            if (resultCode == Activity.RESULT_OK) {
-                Bundle bundle = data.getExtras();
-                Filme f = (Filme) bundle.getSerializable("filme");
-                int position = bundle.getInt("position");
-                adapter.update(f, position);
-            }
-        }
-        if (requestCode == REQUEST_INSERT) {
-            if (resultCode == Activity.RESULT_OK) {
-                Bundle bundle = data.getExtras();
-                Filme f = (Filme) bundle.getSerializable("filme");
-                adapter.inserir(f);
-            }
-        }
-    }
 }
