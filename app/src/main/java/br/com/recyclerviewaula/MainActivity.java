@@ -2,6 +2,7 @@ package br.com.recyclerviewaula;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
@@ -12,6 +13,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.support.v7.widget.helper.ItemTouchHelper;
+import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -41,6 +43,8 @@ public class MainActivity extends AppCompatActivity implements Actions {
     private static final int REQUEST_EDIT = 1;
     private static final int REQUEST_INSERT = 2;
 
+    private String TAG = MainActivity.class.getSimpleName();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -48,10 +52,7 @@ public class MainActivity extends AppCompatActivity implements Actions {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        setRecyclerView();
-        setFloatActionButton();
-
-
+        new GetFilmesJson().execute();
     }
 
     @Override
@@ -65,7 +66,7 @@ public class MainActivity extends AppCompatActivity implements Actions {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         if (id == R.id.action_settings) {
-            Toast.makeText(this,adapter.getListaFilmes().get(0).getTitulo()+" "+adapter.getListaFilmes().get(1).getTitulo()+" "+adapter.getListaFilmes().get(2).getTitulo(),Toast.LENGTH_LONG).show();
+            Toast.makeText(this, adapter.getListaFilmes().get(0).getTitulo() + " " + adapter.getListaFilmes().get(1).getTitulo() + " " + adapter.getListaFilmes().get(2).getTitulo(), Toast.LENGTH_LONG).show();
             return true;
         }
 
@@ -73,7 +74,7 @@ public class MainActivity extends AppCompatActivity implements Actions {
     }
 
 
-    private void setRecyclerView(){
+    private void setRecyclerView() {
         setListaFilmesJson();
 
         adapter = new FilmeAdapter(listaFilmes, this);
@@ -88,7 +89,7 @@ public class MainActivity extends AppCompatActivity implements Actions {
 
     }
 
-    private void setListaFilmesXML(){
+    private void setListaFilmesXML() {
         XmlPullParserFactory pullParserFactory;
         try {
             pullParserFactory = XmlPullParserFactory.newInstance();
@@ -107,33 +108,33 @@ public class MainActivity extends AppCompatActivity implements Actions {
         }
     }
 
-    private void parseXML(XmlPullParser parser) throws XmlPullParserException,IOException {
+    private void parseXML(XmlPullParser parser) throws XmlPullParserException, IOException {
         listaFilmes = null;
         int eventType = parser.getEventType();
         Filme filme = null;
-        while (eventType != XmlPullParser.END_DOCUMENT){
+        while (eventType != XmlPullParser.END_DOCUMENT) {
             String name = null;
-            switch (eventType){
+            switch (eventType) {
                 case XmlPullParser.START_DOCUMENT:
                     listaFilmes = new ArrayList<Filme>();
                     break;
                 case XmlPullParser.START_TAG:
                     name = parser.getName();
-                    if (name.equals("filme")){
+                    if (name.equals("filme")) {
                         filme = new Filme();
-                    } else if (filme != null){
-                        if (name.equals("titulo")){
+                    } else if (filme != null) {
+                        if (name.equals("titulo")) {
                             filme.setTitulo(parser.nextText());
-                        } else if (name.equals("genero")){
+                        } else if (name.equals("genero")) {
                             filme.setGenero(parser.nextText());
-                        } else if (name.equals("ano")){
+                        } else if (name.equals("ano")) {
                             filme.setAno(Integer.valueOf(parser.nextText()));
                         }
                     }
                     break;
                 case XmlPullParser.END_TAG:
                     name = parser.getName();
-                    if (name.equalsIgnoreCase("filme") && filme != null){
+                    if (name.equalsIgnoreCase("filme") && filme != null) {
                         listaFilmes.add(filme);
                     }
             }
@@ -141,34 +142,34 @@ public class MainActivity extends AppCompatActivity implements Actions {
         }
     }
 
-    private void setListaFilmesJson(){
-        try{
-            InputStream in = getApplication().getAssets().open("filmes.json");
-            String line = "";
-            BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-            StringBuffer buffer = new StringBuffer();
-            while ((line = reader.readLine()) != null)
-                buffer.append(line);
-            String resposta = buffer.toString();
+    private void setListaFilmesJson() {
 
-            JSONObject object= new JSONObject(resposta);
-            JSONArray jsonArray = object.getJSONArray("filmes");
-            listaFilmes = new ArrayList<Filme>();
-            for (int i=0; i< jsonArray.length(); i++){
-                Filme f = new Filme();
-                f.setTitulo(jsonArray.getJSONObject(i).getString("titulo"));
-                f.setGenero(jsonArray.getJSONObject(i).getString("genero"));
-                f.setAno(jsonArray.getJSONObject(i).getInt("ano"));
-                listaFilmes.add(f);
+    }
+
+
+    private String convertStreamToString(InputStream is) {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+        StringBuilder sb = new StringBuilder();
+
+        String line;
+        try {
+            while ((line = reader.readLine()) != null) {
+                sb.append(line).append('\n');
             }
         } catch (IOException e) {
             e.printStackTrace();
-        } catch (JSONException e) {
-            e.printStackTrace();
+        } finally {
+            try {
+                is.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
+
+        return sb.toString();
     }
 
-    private void setFloatActionButton(){
+    private void setFloatActionButton() {
         fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -178,7 +179,7 @@ public class MainActivity extends AppCompatActivity implements Actions {
         });
     }
 
-    private void inserirFilme(){
+    private void inserirFilme() {
         Intent intent = new Intent(this, EditFilmActivity.class);
         Bundle bundle = new Bundle();
         bundle.putInt("request_code", REQUEST_INSERT);
@@ -210,7 +211,7 @@ public class MainActivity extends AppCompatActivity implements Actions {
 
     @Override
     public void undo() {
-        Snackbar snackbar = Snackbar.make(findViewById(R.id.constraintLayout),"Item removido.",Snackbar.LENGTH_LONG);
+        Snackbar snackbar = Snackbar.make(findViewById(R.id.constraintLayout), "Item removido.", Snackbar.LENGTH_LONG);
 
         snackbar.setAction("Desfazer", new View.OnClickListener() {
             @Override
@@ -223,7 +224,7 @@ public class MainActivity extends AppCompatActivity implements Actions {
 
     @Override
     public void toast(Filme filme) {
-        Toast.makeText(this,filme.getTitulo()+" "+filme.getGenero()+" "+filme.getAno(),Toast.LENGTH_LONG).show();
+        Toast.makeText(this, filme.getTitulo() + " " + filme.getGenero() + " " + filme.getAno(), Toast.LENGTH_LONG).show();
     }
 
     @Override
@@ -235,6 +236,64 @@ public class MainActivity extends AppCompatActivity implements Actions {
         bundle.putInt("position", position);
         intent.putExtras(bundle);
         startActivityForResult(intent, REQUEST_EDIT);
+    }
+
+    private class GetFilmesJson extends AsyncTask<Void, Void, Void> {
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            Toast.makeText(MainActivity.this, "Json Data is downloading", Toast.LENGTH_LONG).show();
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            listaFilmes = new ArrayList<Filme>();
+
+            HttpHandler sh = new HttpHandler();
+            String jsonStr = sh.makeServiceCall("https://my-json-server.typicode.com/mbegnini/jsonServer/db");
+            if (jsonStr != null) {
+                try {
+                    JSONObject object = new JSONObject(jsonStr);
+                    JSONArray jsonArray = object.getJSONArray("filmes");
+                    for (int i = 0; i < jsonArray.length(); i++) {
+                        Filme f = new Filme();
+                        f.setTitulo(jsonArray.getJSONObject(i).getString("titulo"));
+                        f.setGenero(jsonArray.getJSONObject(i).getString("genero"));
+                        f.setAno(jsonArray.getJSONObject(i).getInt("ano"));
+                        listaFilmes.add(f);
+                    }
+                }  catch (final JSONException e) {
+                    Log.e(TAG, "Json parsing error: " + e.getMessage());
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(getApplicationContext(),
+                                    "Json parsing error: " + e.getMessage(),
+                                    Toast.LENGTH_LONG).show();
+                        }
+                    });
+                }
+            } else {
+                Log.e(TAG, "Couldn't get json from server.");
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(getApplicationContext(),
+                                "Couldn't get json from server. Check LogCat for possible errors!",
+                                Toast.LENGTH_LONG).show();
+                    }
+                });
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
+            super.onPostExecute(result);
+            setRecyclerView();
+            setFloatActionButton();
+        }
     }
 
 }
